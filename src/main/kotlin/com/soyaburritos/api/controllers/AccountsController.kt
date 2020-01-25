@@ -40,7 +40,7 @@ internal fun Routing.apiAccounts(accountsService: AccountsService) {
 
             val account = accountId?.let { it1 -> accountsService.getAccount(it1) }
 
-            account?.let { it -> call.respond(it.amount) } ?: call.respond(HttpStatusCode.NotFound)
+            account?.let { call.respond(account.amount) } ?: call.respond(HttpStatusCode.NotFound)
         }
 
         post("/create") {

@@ -8,6 +8,9 @@ import com.soyaburritos.api.db.Users
 import com.soyaburritos.api.entities.AccountEntity
 import com.soyaburritos.api.entities.UserRequest
 import com.soyaburritos.api.entities.UserWithAccountInfoEntity
+import com.soyaburritos.api.exceptions.AccountsException
+import com.soyaburritos.api.exceptions.UsersException
+import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.stream.Collectors.toList
@@ -74,15 +77,23 @@ class UsersService {
                 it[lastName] = userTo.lastName
             } get Users.userId
 
-            if (userTo.accountIds != null) {
-                userTo.accountIds.stream()
-                    .filter { accountId -> validateAccountIdExists(accountId) }
-                    .forEach { id ->
-                        AccountsToUsers.insert {
-                            it[userId] = createdUserId
-                            it[accountId] = id
+            try {
+                if (userTo.accountIds != null) {
+                    userTo.accountIds.stream()
+                        .filter { accountId -> validateAccountIdExists(accountId) }
+                        .forEach { id ->
+                            AccountsToUsers.insert {
+                                it[userId] = createdUserId
+                                it[accountId] = id
+                            }
                         }
-                    }
+                }
+            } catch(ex: ExposedSQLException) {
+                if (ex.message?.contains("Unique index or primary key violation")!!) {
+                    throw AccountsException("Try to assign already assigned account")
+                } else {
+                    throw ex
+                }
             }
             createdUserId
         }
@@ -90,9 +101,18 @@ class UsersService {
 
     fun deleteUser(userId: Int): Int {
         return transaction {
-            Users.deleteWhere {
+
+            val countOfDeleted = Users.deleteWhere {
                 Users.userId eq userId
             }
+
+            if (countOfDeleted > 0) {
+                AccountsToUsers.deleteWhere {
+                    AccountsToUsers.userId eq userId
+                }
+            }
+
+            countOfDeleted
         }
     }
 

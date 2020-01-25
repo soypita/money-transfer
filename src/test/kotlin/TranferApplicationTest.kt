@@ -35,8 +35,27 @@ open class TranferApplicationTest {
         const val ACCOUNTS_SIZE = 6
         const val USER_NAME = "USER_NEW"
         const val USER_LAST_NAME = "Userovich"
+        const val EXISTING_USER_ID = 1
+        const val NOT_EXISTING_USER_ID = 123
+        const val EXISTING_ACCOUNT_ID = 1
+        const val NOT_EXISTING_ACCOUNT_ID = 123
+        const val EXISTING_ACCOUNT_CUR_CODE = "RUB"
+        const val CUR_CODE = "RUB"
+        const val WRONG_CUR_CODE = "TST"
+        const val WRONG_ID = "testWrongId"
+
+        val EXISTING_ACCOUNT_BALANCE = BigDecimal("100.0000")
+        val ACCOUNT_BALANCE_TO_CREATE = BigDecimal("10.0000")
         val AMOUNT = BigDecimal("30.0000")
-        val CUR_CODE = "RUB"
+
+        // for transfer test
+        const val ACCOUNT_ID_FROM = 1
+        const val ACCOUNT_ID_TO = 2
+        const val ACCOUNTS_CUR_CODE = "RUB"
+        const val TRANSFER_CUR_CODE = "EUR"
+        val INITIAL_BALANCE_FROM = BigDecimal("100.0000")
+        val INITIAL_BALANCE_TO = BigDecimal("200.0000")
+        val TRANSFER_AMOUNT = BigDecimal("30.0000")
 
         private var serverStarted = false
 

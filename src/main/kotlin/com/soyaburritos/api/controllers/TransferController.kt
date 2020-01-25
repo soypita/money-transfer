@@ -3,6 +3,7 @@ package com.soyaburritos.api.controllers
 import com.soyaburritos.api.entities.MoneyTransaction
 import com.soyaburritos.api.services.TransferService
 import com.soyaburritos.api.validators.validateAccountId
+import com.soyaburritos.api.validators.validateCurCode
 import io.ktor.application.call
 import io.ktor.request.receive
 import io.ktor.response.respond
@@ -16,6 +17,7 @@ internal fun Routing.apiTransfer(transferService: TransferService) {
             val transferTransaction = call.receive<MoneyTransaction>()
             validateAccountId(transferTransaction.fromAccountId)
             validateAccountId(transferTransaction.toAccountId)
+            validateCurCode(transferTransaction.curCode)
             
             call.respond(transferService.transferMoney(transferTransaction))
         }

@@ -7,10 +7,12 @@ import com.soyaburritos.api.db.Users
 import com.soyaburritos.api.entities.AccountEntity
 import com.soyaburritos.api.exceptions.AccountsException
 import com.soyaburritos.api.exceptions.UsersException
+import com.soyaburritos.api.validators.validateCurCode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -37,6 +39,7 @@ class AccountsService {
     }
 
     fun createAccount(accountToCreate: AccountEntity): Int {
+        validateCurCode(accountToCreate.curCode)
         return transaction {
             Accounts.insert {
                 it[amount] = accountToCreate.amount
@@ -96,9 +99,17 @@ class AccountsService {
                 throw UsersException("User with id %s not exists".format(userExists))
             }
 
-            AccountsToUsers.insert {
-                it[AccountsToUsers.userId] = userId
-                it[AccountsToUsers.accountId] = accountId
+            try {
+                AccountsToUsers.insert {
+                    it[AccountsToUsers.userId] = userId
+                    it[AccountsToUsers.accountId] = accountId
+                }
+            } catch (ex: ExposedSQLException) {
+                if (ex.message?.contains("Unique index or primary key violation")!!) {
+                    throw AccountsException("Try to assign already assigned account")
+                } else {
+                    throw ex
+                }
             }
         }
     }

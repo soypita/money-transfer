@@ -8,6 +8,7 @@ import com.soyaburritos.api.db.AccountsToUsers
 import com.soyaburritos.api.db.Users
 import com.soyaburritos.api.entities.UserRequest
 import com.soyaburritos.api.entities.UserWithAccountInfoEntity
+import io.ktor.http.HttpStatusCode
 import io.restassured.http.ContentType
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
@@ -18,7 +19,6 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 class UsersControllerTest : TranferApplicationTest() {
-
     private val BASE_URL = "/users"
 
     @Test
@@ -53,17 +53,63 @@ class UsersControllerTest : TranferApplicationTest() {
     }
 
     @Test
+    fun getUserByIdWithoutAccountInfo() {
+        // when
+        val user = given().queryParam("withAccountsInfo", "false")
+            .get("${BASE_URL}/${EXISTING_USER_ID}")
+            .then()
+            .extract()
+            .to<UserWithAccountInfoEntity>()
+
+        // then
+        assertThat(user).isNotNull
+        assertThat(user.userId).isEqualTo(EXISTING_USER_ID)
+        assertThat(user.accounts).isEmpty()
+    }
+
+    @Test
+    fun getUserByIdWithAccountInfo() {
+        // when
+        val user = given().queryParam("withAccountsInfo", "true")
+            .get("${BASE_URL}/${EXISTING_USER_ID}")
+            .then()
+            .extract()
+            .to<UserWithAccountInfoEntity>()
+
+        // then
+        assertThat(user).isNotNull
+        assertThat(user.userId).isEqualTo(EXISTING_USER_ID)
+        assertThat(user.accounts).isNotEmpty
+    }
+
+    @Test
+    fun getNotExistingUserShouldReturnNotFoundError() {
+        // expect
+        get("${BASE_URL}/${NOT_EXISTING_USER_ID}")
+            .then()
+            .statusCode(HttpStatusCode.NotFound.value)
+    }
+
+    @Test
+    fun failedGetUserWhenBadIdIsPassed() {
+        // expect
+        get("${BASE_URL}/${WRONG_ID}")
+            .then()
+            .statusCode(HttpStatusCode.InternalServerError.value)
+    }
+
+    @Test
     fun createUserWithoutAccountsTest() {
         // given
-        val userToUpdate = UserRequest(USER_NAME, USER_LAST_NAME, null)
+        val userToCreate = UserRequest(USER_NAME, USER_LAST_NAME, null)
         // when
         val newUserId = given()
             .contentType(ContentType.JSON)
-            .body(userToUpdate)
+            .body(userToCreate)
             .When()
             .post("${BASE_URL}/create")
             .then()
-            .statusCode(200)
+            .statusCode(HttpStatusCode.OK.value)
             .extract().to<Int>()
 
         // then
@@ -91,15 +137,17 @@ class UsersControllerTest : TranferApplicationTest() {
                 } get Accounts.accountId
             }
         }
-        val userToUpdate = UserRequest(USER_NAME, USER_LAST_NAME, listOf(newAccountId))
+
+        val userToCreate = UserRequest(USER_NAME, USER_LAST_NAME, listOf(newAccountId))
+
         // when
         val newUserId = given()
             .contentType(ContentType.JSON)
-            .body(userToUpdate)
+            .body(userToCreate)
             .When()
             .post("${BASE_URL}/create")
             .then()
-            .statusCode(200)
+            .statusCode(HttpStatusCode.OK.value)
             .extract().to<Int>()
 
         // then
@@ -126,7 +174,41 @@ class UsersControllerTest : TranferApplicationTest() {
     }
 
     @Test
-    fun deleteExistingUserTest() {
+    fun creatingUserWithAlreadyAssigningAccount() {
+        // given
+        val userToUpdate = UserRequest(USER_NAME, USER_LAST_NAME, listOf(EXISTING_ACCOUNT_ID))
 
+        // then
+        given()
+            .contentType(ContentType.JSON)
+            .body(userToUpdate)
+            .When()
+            .post("${BASE_URL}/create")
+            .then()
+            .statusCode(HttpStatusCode.InternalServerError.value)
+    }
+
+    @Test
+    fun deleteExistingUserWithAllConnectedAccountsTest() {
+        // expect
+        delete("${BASE_URL}/${EXISTING_USER_ID}")
+            .then()
+            .statusCode(HttpStatusCode.OK.value)
+    }
+
+    @Test
+    fun deleteNotExistingUserShouldReturnNotFoundError() {
+        // expect
+        delete("${BASE_URL}/${NOT_EXISTING_USER_ID}")
+            .then()
+            .statusCode(HttpStatusCode.NotFound.value)
+    }
+
+    @Test
+    fun failedToDeleteWhenWrongUserIdIsPassed() {
+        // expect
+        delete("${BASE_URL}/${WRONG_ID}")
+            .then()
+            .statusCode(HttpStatusCode.InternalServerError.value)
     }
 }

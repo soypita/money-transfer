@@ -1,9 +1,8 @@
 package com.soyaburritos.api.controllers
 
-import com.soyaburritos.api.entities.UserEntity
 import com.soyaburritos.api.entities.UserRequest
-import com.soyaburritos.api.exceptions.UsersException
 import com.soyaburritos.api.services.UsersService
+import com.soyaburritos.api.validators.validateUserId
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
 import io.ktor.request.receive
@@ -17,8 +16,10 @@ internal fun Routing.apiUsers(usersService: UsersService) {
             call.respond(usersService.getAllUsers(withAccountInfo))
         }
         get("/{userId}") {
-            val userId: Int? = call.parameters["userId"]?.toIntOrNull() ?: throw UsersException("UserId not provided")
+            val userId: Int? = call.parameters["userId"]?.toIntOrNull()
             val withAccountInfo: Boolean? = call.request.queryParameters["withAccountsInfo"]?.toBoolean()
+
+            validateUserId(userId)
 
             val user =
                 userId?.let { usersService.getUser(userId, withAccountInfo) }
@@ -33,7 +34,9 @@ internal fun Routing.apiUsers(usersService: UsersService) {
         }
 
         delete("/{userId}") {
-            val userId: Int? = call.parameters["userId"]?.toIntOrNull() ?: throw UsersException("UserId not provided")
+            val userId: Int? = call.parameters["userId"]?.toIntOrNull()
+
+            validateUserId(userId)
 
             userId?.let {
                 val deleteCount = usersService.deleteUser(userId)

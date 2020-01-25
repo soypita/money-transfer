@@ -13,12 +13,12 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.math.BigDecimal
 
 fun prepareData() {
-    val firstAccount = AccountEntity(null, BigDecimal("100.0000"), "RUB")
-    val secondAccount = AccountEntity(null, BigDecimal("200.0000"), "RUB")
-    val thirdAccount = AccountEntity(null, BigDecimal("50.0000"), "RUB")
-    val fourthAccount = AccountEntity(null, BigDecimal("10.0000"), "RUB")
-    val fifthAccount = AccountEntity(null, BigDecimal("500.0000"), "RUB")
-    val sixAccount = AccountEntity(null, BigDecimal("30.0000"), "RUB")
+    val firstAccount = AccountEntity(1, BigDecimal("100.0000"), "RUB")
+    val secondAccount = AccountEntity(2, BigDecimal("200.0000"), "RUB")
+    val thirdAccount = AccountEntity(3, BigDecimal("50.0000"), "RUB")
+    val fourthAccount = AccountEntity(4, BigDecimal("10.0000"), "RUB")
+    val fifthAccount = AccountEntity(5, BigDecimal("500.0000"), "RUB")
+    val sixAccount = AccountEntity(6, BigDecimal("30.0000"), "RUB")
 
     val accounts = listOf(
         firstAccount,
@@ -30,18 +30,20 @@ fun prepareData() {
     )
 
     val users = listOf(
-        UserWithAccountInfoEntity(null, "Test", "Testov", listOf(firstAccount, sixAccount)),
-        UserWithAccountInfoEntity(null, "John", "Smith", listOf(secondAccount, fifthAccount, thirdAccount)),
-        UserWithAccountInfoEntity(null, "David", "Gilmor", listOf(fourthAccount))
+        UserWithAccountInfoEntity(1, "Test", "Testov", listOf(firstAccount, sixAccount)),
+        UserWithAccountInfoEntity(2, "John", "Smith", listOf(secondAccount, fifthAccount, thirdAccount)),
+        UserWithAccountInfoEntity(3, "David", "Gilmor", listOf(fourthAccount))
     )
 
     transaction {
         Accounts.batchInsert(accounts) {
+            this[Accounts.accountId] = it.accountId!!
             this[Accounts.amount] = it.amount
             this[Accounts.curCode] = it.curCode
         }
 
         Users.batchInsert(users) {
+            this[Users.userId] = it.userId!!
             this[Users.firstName] = it.firstName
             this[Users.lastName] = it.lastName
         }

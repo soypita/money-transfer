@@ -1,33 +1,17 @@
 package com.soyaburritos.api.db
 
-import com.soyaburritos.api.configuration.DB_DRIVER
-import com.soyaburritos.api.configuration.DB_PASSWORD
-import com.soyaburritos.api.configuration.DB_URL
-import com.soyaburritos.api.configuration.DB_USER
+import com.soyaburritos.api.configuration.*
 import com.soyaburritos.api.entities.AccountEntity
 import com.soyaburritos.api.entities.UserWithAccountInfoEntity
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigUtil
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import io.ktor.config.HoconApplicationConfig
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
-import kotlin.math.min
 
 object DatabaseFactory {
-    private val isTest: Boolean =
-        HoconApplicationConfig(
-            ConfigFactory.load().getConfig(
-                ConfigUtil.joinPath(
-                    "ktor",
-                    "deployment"
-                )
-            )
-        ).property("environment").getString() == "test"
     private val log: Logger = LoggerFactory.getLogger(DatabaseFactory::class.java)
 
     fun init() {
@@ -42,16 +26,15 @@ object DatabaseFactory {
         val db = Database.connect(hikariDataSource)
         db.useNestedTransactions = true
 
-        if (isTest) {
+        if (IS_TEST) {
             createSchemaAndPrepareData()
         }
-
     }
 
     tailrec fun createHikariDataSourceWithRetry(
         jdbcUrl: String, username: String, password: String,
         driver: String,
-        backoffSequenceMs: Iterator<Long> = defaultBackoffSequenceMs.iterator()
+        backoffSequenceMs: Iterator<Long> = DEFAULT_BACKOFF_SEQUENCE_MS.iterator()
     ): HikariDataSource {
         try {
             val config = HikariConfig()
@@ -69,9 +52,6 @@ object DatabaseFactory {
         Thread.sleep(backoffMillis)
         return createHikariDataSourceWithRetry(jdbcUrl, username, password, driver, backoffSequenceMs)
     }
-
-    val maxBackoffMs = 16000L
-    val defaultBackoffSequenceMs = generateSequence(1000L) { min(it * 2, maxBackoffMs) }
 
 
     private fun createSchemaAndPrepareData() {

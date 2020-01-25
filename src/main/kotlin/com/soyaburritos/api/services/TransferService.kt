@@ -20,7 +20,6 @@ class TransferService {
                     .firstOrNull()
                     ?: throw AccountsException("Account with id %s not exist".format(transfer.fromAccountId))
 
-
             val accountTo =
                 Accounts.select { Accounts.accountId eq transfer.toAccountId }.forUpdate()
                     .map { mapToAccountsEntity(it) }

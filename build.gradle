@@ -18,7 +18,7 @@ test {
 }
 
 application {
-    mainClassName = "com.soyaburritos.api.ApplicationKt"
+    mainClassName = "com.soyaburritos.api.TransferApplicationKt"
 }
 
 dependencies {

@@ -4,6 +4,7 @@ import com.soyaburritos.api.entities.AccountEntity
 import com.soyaburritos.api.exceptions.AccountsException
 import com.soyaburritos.api.services.AccountsService
 import com.soyaburritos.api.validators.validateAccountId
+import com.soyaburritos.api.validators.validateAmount
 import com.soyaburritos.api.validators.validateUserId
 import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
@@ -52,6 +53,7 @@ internal fun Routing.apiAccounts(accountsService: AccountsService) {
             val accountId: Int? = call.parameters["accountId"]?.toIntOrNull()
 
             validateAccountId(accountId)
+            validateAmount(call.parameters["amount"])
 
             val depositAmount = BigDecimal(call.parameters["amount"])
 
@@ -59,11 +61,9 @@ internal fun Routing.apiAccounts(accountsService: AccountsService) {
                 call.respond(HttpStatusCode.BadRequest)
             }
 
-            if (accountId != null) {
+            accountId?.let {
                 val updatedAccount = accountsService.updateAccountBalance(accountId, depositAmount)
                 updatedAccount?.let { it1 -> call.respond(it1) } ?: call.respond(HttpStatusCode.NotFound)
-            } else {
-                call.respond(HttpStatusCode.BadRequest)
             }
         }
 
@@ -78,27 +78,28 @@ internal fun Routing.apiAccounts(accountsService: AccountsService) {
                 call.respond(HttpStatusCode.BadRequest)
             }
 
-            if (accountId != null) {
+            accountId?.let {
                 val updatedAccount = accountsService.updateAccountBalance(accountId, depositAmount.negate())
                 updatedAccount?.let { it1 -> call.respond(it1) } ?: call.respond(HttpStatusCode.NotFound)
-            } else {
-                call.respond(HttpStatusCode.BadRequest)
             }
         }
 
-        post("/{accountId}/addToUser") {
+        post("/{accountId}/addToUser/{userId}") {
             val accountId: Int? = call.parameters["accountId"]?.toIntOrNull()
-            val userId: Int? = call.request.queryParameters["userId"]?.toIntOrNull()
+            val userId: Int? = call.parameters["userId"]?.toIntOrNull()
 
             validateUserId(userId)
             validateAccountId(accountId)
 
-            call.respond(accountsService.addAccountToUser(accountId!!, userId!!))
+            accountsService.addAccountToUser(accountId!!, userId!!)
+
+            call.respond(HttpStatusCode.OK)
         }
 
         delete("/{accountId}") {
-            val accountId: Int? =
-                call.parameters["accountId"]?.toIntOrNull() ?: throw AccountsException("AccountId not provided")
+            val accountId: Int? = call.parameters["accountId"]?.toIntOrNull()
+
+            validateAccountId(accountId)
 
             accountId?.let {
                 val deleteCount = accountsService.deleteAccount(accountId)

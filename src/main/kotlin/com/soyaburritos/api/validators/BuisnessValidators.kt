@@ -37,4 +37,8 @@ fun validateAmount(validatedAmount: String?) {
     } catch (ex: Exception) {
         throw AmountException("Wrong amount value")
     }
+
+    if (BigDecimal(validatedAmount) < BigDecimal.ZERO) {
+        throw AmountException("Transaction with negative amount")
+    }
 }

@@ -45,7 +45,7 @@ internal fun Routing.apiAccounts(accountsService: AccountsService) {
 
         post("/create") {
             val accountToCreate = call.receive<AccountEntity>()
-
+            validateAmount(accountToCreate.amount.toPlainString())
             call.respond(accountsService.createAccount(accountToCreate))
         }
 
@@ -57,10 +57,6 @@ internal fun Routing.apiAccounts(accountsService: AccountsService) {
 
             val depositAmount = BigDecimal(call.parameters["amount"])
 
-            if (depositAmount <= BigDecimal.ZERO) {
-                call.respond(HttpStatusCode.BadRequest)
-            }
-
             accountId?.let {
                 val updatedAccount = accountsService.updateAccountBalance(accountId, depositAmount)
                 updatedAccount?.let { it1 -> call.respond(it1) } ?: call.respond(HttpStatusCode.NotFound)
@@ -71,12 +67,9 @@ internal fun Routing.apiAccounts(accountsService: AccountsService) {
             val accountId: Int? = call.parameters["accountId"]?.toIntOrNull()
 
             validateAccountId(accountId)
+            validateAmount(call.parameters["amount"])
 
             val depositAmount = BigDecimal(call.parameters["amount"])
-
-            if (depositAmount <= BigDecimal.ZERO) {
-                call.respond(HttpStatusCode.BadRequest)
-            }
 
             accountId?.let {
                 val updatedAccount = accountsService.updateAccountBalance(accountId, depositAmount.negate())

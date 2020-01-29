@@ -5,14 +5,17 @@ import com.soyaburritos.api.db.Accounts
 import com.soyaburritos.api.entities.AccountEntity
 import com.soyaburritos.api.entities.MoneyTransaction
 import com.soyaburritos.api.exceptions.AccountsException
+import com.soyaburritos.api.exceptions.AmountException
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.math.BigDecimal
 
 class TransferService {
-
     fun transferMoney(transfer: MoneyTransaction) {
+        if (transfer.fromAccountId == transfer.toAccountId) {
+            throw AccountsException("Self transactions currently unavailable")
+        }
         transaction {
             val accountFrom: AccountEntity =
                 Accounts.select { Accounts.accountId eq transfer.fromAccountId }.forUpdate()

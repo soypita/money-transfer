@@ -132,6 +132,21 @@ class AccountsControllerTest : TranferApplicationTest() {
     }
 
     @Test
+    fun shouldFailCreateAccountWhenNegativeAmountPassed() {
+        // given
+        val accountToCreate = AccountEntity(null, ACCOUNT_BALANCE_TO_CREATE.negate(), CUR_CODE)
+
+        // expect
+        given()
+            .contentType(ContentType.JSON)
+            .body(accountToCreate)
+            .When()
+            .post("${BASE_URL}/create")
+            .then()
+            .statusCode(HttpStatusCode.InternalServerError.value)
+    }
+
+    @Test
     fun shouldDepositToAccountSuccessfully() {
         // when
         val updatedAccount = given()

@@ -158,4 +158,44 @@ class TransferControllerTest : TranferApplicationTest() {
             .statusCode(HttpStatusCode.InternalServerError.value)
 
     }
+
+    @Test
+    fun failedToPerformTransactionWithNegativeAmount() {
+        // given
+        val transferTransaction =
+            MoneyTransaction(
+                TRANSFER_AMOUNT.negate(),
+                ACCOUNTS_CUR_CODE,
+                ACCOUNT_ID_FROM,
+                ACCOUNT_ID_TO
+            )
+        // when
+        given()
+            .contentType(ContentType.JSON)
+            .body(transferTransaction)
+            .When()
+            .post(BASE_URL)
+            .then()
+            .statusCode(HttpStatusCode.InternalServerError.value)
+    }
+
+    @Test
+    fun failedToPerformSelfTransaction() {
+        // given
+        val transferTransaction =
+            MoneyTransaction(
+                TRANSFER_AMOUNT,
+                ACCOUNTS_CUR_CODE,
+                ACCOUNT_ID_FROM,
+                ACCOUNT_ID_FROM
+            )
+        // when
+        given()
+            .contentType(ContentType.JSON)
+            .body(transferTransaction)
+            .When()
+            .post(BASE_URL)
+            .then()
+            .statusCode(HttpStatusCode.InternalServerError.value)
+    }
 }
